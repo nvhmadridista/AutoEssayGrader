@@ -1,5 +1,6 @@
 {
-  "1": "Explain the causes of the French Revolution.",
-  "2": "Describe the process of photosynthesis.",
-  "3": "Discuss the impact of the internet on modern communication."
+  "1": "Cho đoạn code C++ sau:\n\nint x = 5;\ncout << x++ << \" \" << ++x;\n\nChương trình in ra kết quả gì? Giải thích.",
+  "2": "Đoạn code Python sau in ra kết quả gì?\n\na = [1, 2, 3]\na.append(a)\nprint(len(a))",
+  "3": "Đoạn code Python sau có lỗi cú pháp. Hãy sửa lại để chương trình chạy đúng và in ra các số từ 0 đến 4.\n\nfor i in range(5)\n    print(i)",
+  "4": "Hoàn thành hàm C++ sau để trả về tổng của hai số nguyên a và b.\n\nint sum(int a, int b) {\n    // điền code tại đây\n}"
 }

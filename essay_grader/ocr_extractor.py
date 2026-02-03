@@ -11,6 +11,26 @@ class OCRExtractor:
     def __init__(self, lang: str = "en") -> None:
         self._lang = lang
 
+    def _create_paddle_ocr(self):
+        from paddleocr import PaddleOCR as _POCR
+
+        try:
+            return _POCR(
+                use_doc_orientation_classify=True,
+                use_doc_unwarping=False,
+                use_textline_orientation=True,
+                lang=self._lang,
+                text_det_limit_side_len=960,
+                text_det_limit_type="max",
+            )
+        except (TypeError, ValueError):
+            return _POCR(
+                use_angle_cls=True,
+                lang=self._lang,
+                det_limit_side_len=960,
+                det_limit_type="max",
+            )
+
     @staticmethod
     def _is_question_header(text: str) -> bool:
         t = text.strip().lower()
@@ -70,13 +90,7 @@ class OCRExtractor:
 
         # Fallback to live OCR if no lines were loaded
         if not lines:
-            from paddleocr import PaddleOCR as _POCR
-            ocr = _POCR(
-                use_doc_orientation_classify=False,
-                use_doc_unwarping=False,
-                use_textline_orientation=False,
-                lang=self._lang,
-            )
+            ocr = self._create_paddle_ocr()
             result = list(ocr.predict(input=image_path))
             for res in result:
                 txts = getattr(res, "rec_texts", None)
@@ -116,13 +130,7 @@ class OCRExtractor:
 
         # Fallback to live OCR
         lines: List[str] = []
-        from paddleocr import PaddleOCR as _POCR
-        ocr = _POCR(
-            use_doc_orientation_classify=False,
-            use_doc_unwarping=False,
-            use_textline_orientation=False,
-            lang=self._lang,
-        )
+        ocr = self._create_paddle_ocr()
         result = list(ocr.predict(input=image_path))
         for res in result:
             txts = getattr(res, "rec_texts", None)

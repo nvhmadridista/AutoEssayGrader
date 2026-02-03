@@ -5,30 +5,63 @@ from typing import Dict, Any
 
 from .reader import load_and_preprocess
 from .ocr_extractor import OCRExtractor
+from .vietnamese_corrector import ProtonXOfflineConfig, ProtonXOfflineCorrector
 from .llama_grader import grade_essay
 from .utils import ensure_dir, load_json_file, save_json_file
+
+
+def _create_paddle_ocr(lang: str):
+    """Create PaddleOCR with explicit resize/orientation defaults.
+
+    Some PaddleOCR versions can default to a very small detector resize
+    (e.g. limit_side_len=64 with limit_type='min'), which destroys Vietnamese
+    diacritics. We set a safer max-side resize.
+    """
+    from paddleocr import PaddleOCR as _POCR
+
+    # PaddleOCR pipeline interface (current package) uses explicit text_det_* args.
+    try:
+        return _POCR(
+            use_doc_orientation_classify=True,
+            use_doc_unwarping=False,
+            use_textline_orientation=True,
+            lang=lang,
+            text_det_limit_side_len=960,
+            text_det_limit_type="max",
+        )
+    except (TypeError, ValueError):
+        pass
+
+    # PaddleOCR 2.x style
+    return _POCR(
+        use_angle_cls=True,
+        lang=lang,
+        det_limit_side_len=960,
+        det_limit_type="max",
+    )
 
 
 def run_pipeline(
     image_path: str,
     configs_dir: str = "configs",
     results_dir: str = "results",
-    ocr_lang: str = "en",
+    ocr_lang: str = "vi",
     api_url: str = "http://localhost:2911/v1",
     model: str = "Llama-3.1-8B-Instruct",
     ocr_mode: str = "grouped",
+    vn_corrector: str = "none",
+    vn_model: str = "protonx-models/distilled-protonx-legal-tc",
+    vn_top_k: int = 1,
 ) -> Dict[str, Any]:
     img_bgr, img_gray = load_and_preprocess(image_path)
     # Use original image path for OCR; preprocessed array is available if needed.
     ocr_input_path = image_path
-    from paddleocr import PaddleOCR as _POCR
-    ocr = _POCR(
-        use_doc_orientation_classify=False,
-        use_doc_unwarping=False,
-        use_textline_orientation=False,
-        lang=ocr_lang,
-    )
-    result_objs = ocr.predict(input=ocr_input_path)
+
+    ocr = _create_paddle_ocr(ocr_lang)
+    try:
+        result_objs = ocr.predict(input=img_bgr)
+    except Exception:
+        result_objs = ocr.predict(input=ocr_input_path)
     ensure_dir(results_dir)
     for res in result_objs:
         try:
@@ -42,6 +75,10 @@ def run_pipeline(
         student_answers = {"1": raw_text}
     else:
         student_answers = extractor.extract_answers(image_path=ocr_input_path, results_dir=results_dir)
+
+    if vn_corrector == "protonx_offline":
+        corrector = ProtonXOfflineCorrector(ProtonXOfflineConfig(model=vn_model, top_k=vn_top_k))
+        student_answers = {qid: corrector.correct(txt) for qid, txt in student_answers.items()}
     # Load questions and answer key
     questions = load_json_file(os.path.join(configs_dir, "questions.json"))
     answer_key = load_json_file(os.path.join(configs_dir, "answer_key.json"))

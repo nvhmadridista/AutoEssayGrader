@@ -54,7 +54,8 @@ JSON FORMAT:
 """.strip()
 
     # Initialize OpenAI-compatible client (llama.cpp server)
-    client = OpenAI(base_url=api_url, api_key="not-needed")
+    # Use a dummy API key for local servers that don't require authentication
+    client = OpenAI(base_url=api_url, api_key="api_key")
 
     # First attempt: request JSON mode
     try:
@@ -87,7 +88,6 @@ JSON FORMAT:
 
     result = safe_json_loads(content)
 
-    # Ensure required fields and types
     result.setdefault("max_score", max_score)
     for key in ["score", "max_score"]:
         if key in result:

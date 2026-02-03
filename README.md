@@ -41,7 +41,6 @@ You can use LM Studio or Ollama or any server exposing a Chat Completions API co
 `POST http://localhost:1234/v1/chat/completions`
 
 - LM Studio:
-
   - Download Llama-3.1-8B-Instruct model.
   - Start the local server (Developer tab → Local Server).
   - Ensure the API endpoint is `http://localhost:1234/v1/chat/completions`.
@@ -86,6 +85,37 @@ python main.py --input samples/essay_sample.jpg \
 	--ocr-lang en \
 	--api-url http://localhost:1234/v1/chat/completions \
 	--model Llama-3.1-8B-Instruct
+```
+
+### Optional: Vietnamese correction with ProtonX (offline)
+
+Install ProtonX:
+
+```bash
+pip install --upgrade protonx
+```
+
+ProtonX offline correction also requires PyTorch and a compatible Transformers version.
+
+- Install CPU PyTorch (recommended for this project):
+
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+```
+
+- Ensure Transformers is < 5 (avoids tokenizer loading error):
+
+```bash
+pip install -U "transformers<5"
+```
+
+Enable correction after OCR:
+
+```bash
+python main.py --input samples/essay_sample.jpg --ocr-lang vi \
+  --vn-corrector protonx_offline \
+  --vn-model protonx-models/distilled-protonx-legal-tc \
+  --vn-top-k 3
 ```
 
 The final JSON is printed and also saved to `results/result.json`.

@@ -4,3 +4,5 @@ opencv-python>=4.8.0
 numpy>=1.24.0
 requests>=2.31.0
 openai>=1.52.0
+protonx>=0.1.8
+transformers>=4.36,<5
